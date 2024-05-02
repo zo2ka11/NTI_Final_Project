@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: Demo_App_Deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: Demo_App
+  template:
+    metadata:
+      labels:
+        app: Demo_App
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: Demo_App
+        image: 730335448540.dkr.ecr.us-east-1.amazonaws.com/todo-app-automation:v1
+        
+        ports:
+        - containerPort: 5000
+        env:
+          - name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: rds-secret
+                key: endpoint
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: rds-secret
+                key: username
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: rds-secret
+                key: password
+          - name: DB_DATABASE
+            value: mydb

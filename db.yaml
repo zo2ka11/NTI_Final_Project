@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create_db_tables
+spec:
+  template:
+    spec:
+      containers:
+      - name: DataBase
+        image: mysql:latest
+        command: ["/bin/bash", "-c"]
+        args: 
+          - >
+            echo '#!/bin/bash
+            SQL_QUERY="
+            CREATE TABLE tasks (
+              id SERIAL PRIMARY KEY,
+              title VARCHAR(255) NOT NULL,
+              description TEXT,
+              is_complete BOOLEAN DEFAULT false
+            );
+            "
+            mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_DATABASE" -e "$SQL_QUERY"
+            if [ $? -eq 0 ]; then
+              echo "Table created successfully"
+            else
+              echo "Error occurred in table creation"
+            fi' > /init-db.sh && chmod +x /init-db.sh && ./init-db.sh
+        env:
+          - name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: secret_ECR
+                key: endpoint
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: secret_ECR
+                key: username
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secret_ECR
+                key: password
+          - name: DB_DATABASE
+            value: mydb
+      restartPolicy: Never
+  backoffLimit: 4
